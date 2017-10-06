@@ -15,9 +15,10 @@ public class DiscoverDevices extends Thread {
     private  List<de.re.eeip.encapsulation.CipIdentityItem> returnValue = new ArrayList<>();
 
     public List<de.re.eeip.encapsulation.CipIdentityItem> ListIdentity() {
-        DatagramSocket socket;
+        DatagramSocket socket = null;
         boolean running;
         byte[] buf = new byte[256];
+        int outputPort = 0;
 
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -29,21 +30,30 @@ public class DiscoverDevices extends Thread {
                 try {
 
                     socket = new DatagramSocket();
+                    socket.setReuseAddress(true);
                     byte[] sendData = new byte[24];
                     sendData[0] = 0x63;               //Command for "ListIdentity"
-                    int outputPort = socket.getLocalPort();
-                    ListenerThread listenerThread = new ListenerThread(outputPort);
-                    listenerThread.start();
+                    outputPort = socket.getLocalPort();
+
                     DatagramPacket packet
                             = new DatagramPacket(sendData, sendData.length, InetAddress.getByName( "255.255.255.255" ), 44818);
 
 
 
                     socket.send(packet);
-                    socket.close();
+
 
                 }
                 catch (IOException  e){}
+
+
+                socket.close();
+                socket.disconnect();
+                ListenerThread listenerThread = new ListenerThread(outputPort);
+                listenerThread.start();
+
+
+
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -68,6 +78,7 @@ public class DiscoverDevices extends Thread {
         {
             try {
                 socket = new DatagramSocket(outputPort);
+                socket.setReuseAddress(true);
             }
             catch (SocketException e)
             {
@@ -94,8 +105,13 @@ public class DiscoverDevices extends Thread {
             catch (IOException e){
 
             }
-            socket.disconnect();
-            socket.close();
+            finally
+            {
+                socket.close();
+                socket.disconnect();
+
+            }
+
 
         }
     }

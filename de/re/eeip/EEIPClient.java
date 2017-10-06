@@ -67,6 +67,18 @@ public class EEIPClient
     private long multicastAddress;
 
 
+    private de.re.eeip.objectlibrary.AssemblyObject assemblyObject;
+    /**
+     * Implementation of the Assembly Object (Class Code: 0x04)
+     * @return  assembly object
+     */
+    @SuppressWarnings("unused")
+    public de.re.eeip.objectlibrary.AssemblyObject getAssemblyObject()
+    {
+        if (assemblyObject == null)
+            assemblyObject = new de.re.eeip.objectlibrary.AssemblyObject(this);
+        return assemblyObject;
+    }
 
 
 
@@ -1072,6 +1084,7 @@ public class EEIPClient
             socket.close();
         }
     }
+
 
     public void setO_T_InstanceID(int instanceID)
     {
