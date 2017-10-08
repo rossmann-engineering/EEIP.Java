@@ -55,8 +55,8 @@ public class EEIPClient
     private boolean t_o_variableLength = true;                //For Forward Open
     private int o_t_length  = 505;                //For Forward Open - Max 505
     private int t_o_length  = 505;                //For Forward Open - Max 505
-    public int o_t_instanceID  = 0x64;               //Ausgänge
-    public int t_o_instanceID = 0x65;               //Eingänge
+    private int o_t_instanceID  = 0x64;               //Ausgänge
+    private int t_o_instanceID = 0x65;               //Eingänge
     public byte[] O_T_IOData = new byte[505];   //Class 1 Real-Time IO-Data O->T
     public byte[] T_O_IOData = new byte[505];    //Class 1 Real-Time IO-Data T->O
 
@@ -81,9 +81,10 @@ public class EEIPClient
     }
 
 
-
-
-
+    /**
+     * List and identify potential targets. This command shall be sent as braodcast message using UDP.
+     * @return Found Ethernet/IP Devices
+     */
     public List<CipIdentityItem> ListIdentity() {
         de.re.eeip.discoverdevices.DiscoverDevices discoverDevices = new de.re.eeip.discoverdevices.DiscoverDevices();
 
@@ -1154,5 +1155,35 @@ public class EEIPClient
     public void setT_O_connectionType(de.re.eeip.cip.datatypes.ConnectionType connectionType)
     {
         this.t_o_connectionType = connectionType;
+    }
+
+    public void setTcpPort(int tcpPort)
+    {
+        this.tcpPort = tcpPort;
+    }
+
+    public void setOriginatorUDPPort(int originatorUDPPort)
+    {
+        this.originatorUDPPort = originatorUDPPort;
+    }
+
+    public void setTargetUDPPort(int targetUDPPort)
+    {
+        this.targetUDPPort = targetUDPPort;
+    }
+
+    public void setIpAddress(String ipAddress)
+    {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setRequestedPacketRate_O_T(long requestedPacketRate_O_T)
+    {
+        this.requestedPacketRate_O_T = requestedPacketRate_O_T;
+    }
+
+    public void setRequestedPacketRate_T_O(long requestedPacketRate_T_O)
+    {
+        this.requestedPacketRate_T_O = requestedPacketRate_T_O;
     }
 }
