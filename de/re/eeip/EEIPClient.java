@@ -821,6 +821,7 @@ public class EEIPClient
 
         //Close the Socket for Receive
         listenerThread.interrupt();
+        sendThread.interrupt();
 
 
 
@@ -962,6 +963,7 @@ public class EEIPClient
                 }
                 //LastReceivedImplicitMessage = DateTime.Now;
                 } catch (Exception e) {
+                    if (!this.isInterrupted())
                     e.printStackTrace();
                 }
             }
@@ -1054,7 +1056,7 @@ public class EEIPClient
                 }
 
                 //---------------Write data
-                for ( int i = 0; i < o_t_Length; i++)
+                for ( int i = 0; i < o_t_length; i++)
                     o_t_IOData[20+headerOffset+i] = (byte)O_T_IOData[i];
                 //---------------Write data
 
@@ -1062,7 +1064,7 @@ public class EEIPClient
                 DatagramPacket packet
                         = null;
                 try {
-                    packet = new DatagramPacket(o_t_IOData, o_t_IOData.length, InetAddress.getByName( ipAddress ), targetUDPPort);
+                    packet = new DatagramPacket(o_t_IOData, 20+headerOffset+o_t_length, InetAddress.getByName( ipAddress ), targetUDPPort);
                 } catch (UnknownHostException e) {
                     e.printStackTrace();
                 }
