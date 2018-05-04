@@ -1,27 +1,16 @@
 package de.re.eeip;
 
-import com.sun.corba.se.pept.transport.Acceptor;
-import com.sun.corba.se.pept.transport.ListenerThread;
 import de.re.eeip.cip.datatypes.CIPCommonServicesEnum;
 import de.re.eeip.cip.datatypes.ConnectionType;
 import de.re.eeip.cip.datatypes.RealTimeFormat;
 import de.re.eeip.cip.exception.CIPException;
-import de.re.eeip.discoverdevices.DiscoverDevices;
 import de.re.eeip.encapsulation.CipIdentityItem;
 import de.re.eeip.encapsulation.datatypes.CommandsEnum;
 
 import java.io.*;
 import java.net.*;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousServerSocketChannel;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
-import java.nio.channels.MulticastChannel;
-import java.nio.charset.Charset;
 import java.util.List;
 
 
@@ -57,22 +46,22 @@ public class EEIPClient
     private int t_o_length  = 505;                //For Forward Open - Max 505
     private int o_t_instanceID  = 0x64;               //Ausgänge
     private int t_o_instanceID = 0x65;               //Eingänge
-    public byte[] O_T_IOData = new byte[505];   //Class 1 Real-Time IO-Data O->T
-    public byte[] T_O_IOData = new byte[505];    //Class 1 Real-Time IO-Data T->O
-
+    private final byte[] O_T_IOData = new byte[505];   //Class 1 Real-Time IO-Data O->T
+    private final byte[] T_O_IOData = new byte[505];   //Class 1 Real-Time IO-Data T->O
+    private final Object O_T_IODataLock = new Object(); // Lock object to access O_T_IOData
+    private final Object T_O_IODataLock = new Object(); // Lock object to access T_O_IOData
 
     private byte assemblyObjectClass  = 0x04;
     private int originatorUDPPort = 0x08AE;
     private int targetUDPPort = 0x08AE;
     private long multicastAddress;
 
-
     private de.re.eeip.objectlibrary.AssemblyObject assemblyObject;
+    
     /**
      * Implementation of the Assembly Object (Class Code: 0x04)
      * @return  assembly object
      */
-    @SuppressWarnings("unused")
     public de.re.eeip.objectlibrary.AssemblyObject getAssemblyObject()
     {
         if (assemblyObject == null)
@@ -199,7 +188,6 @@ public class EEIPClient
     public byte[] GetAttributeSingle(int classID, int instanceID, int attributeID) throws CIPException, IOException {
         if (sessionHandle == 0)             //If a Session is not Registers, Try to Registers a Session with the predefined IP-Address and Port
             this.RegisterSession();
-        byte[] dataToSend = new byte[48];
         de.re.eeip.encapsulation.Encapsulation encapsulation = new de.re.eeip.encapsulation.Encapsulation();
         encapsulation.SessionHandle = sessionHandle;
         encapsulation.Command = CommandsEnum.SendRRData;
@@ -284,7 +272,6 @@ public class EEIPClient
     {
         if (sessionHandle == 0)             //If a Session is not Registered, Try to Registers a Session with the predefined IP-Address and Port
             this.RegisterSession();
-        byte[] dataToSend = new byte[46];
         de.re.eeip.encapsulation.Encapsulation encapsulation = new de.re.eeip.encapsulation.Encapsulation();
         encapsulation.SessionHandle = sessionHandle;
         encapsulation.Command = CommandsEnum.SendRRData;
@@ -354,7 +341,6 @@ public class EEIPClient
     {
         if (sessionHandle == 0)             //If a Session is not Registers, Try to Registers a Session with the predefined IP-Address and Port
             this.RegisterSession();
-        byte[] dataToSend = new byte[48 + value.length];
         de.re.eeip.encapsulation.Encapsulation encapsulation = new de.re.eeip.encapsulation.Encapsulation();
         encapsulation.SessionHandle = sessionHandle;
         encapsulation.Command = CommandsEnum.SendRRData;
@@ -952,11 +938,14 @@ public class EEIPClient
                             headerOffset = 4;
                         if (t_o_realTimeFormat == RealTimeFormat.Heartbeat)
                             headerOffset = 0;
-                        for (int i = 0; i < numberOfBytes-20-headerOffset; i++)
+                        synchronized (T_O_IODataLock)
                         {
-                            T_O_IOData[i] = receivedBytes[20 + i + headerOffset];
+                            for (int i = 0; i < numberOfBytes-20-headerOffset; i++)
+                            {
+                                T_O_IOData[i] = receivedBytes[20 + i + headerOffset];
+                            }
+                            //Console.WriteLine(T_O_IOData[0]);
                         }
-                        //Console.WriteLine(T_O_IOData[0]);
 
 
                     }
@@ -1056,8 +1045,11 @@ public class EEIPClient
                 }
 
                 //---------------Write data
-                for ( int i = 0; i < o_t_length; i++)
-                    o_t_IOData[20+headerOffset+i] = (byte)O_T_IOData[i];
+                synchronized (O_T_IODataLock)
+                {
+                    for ( int i = 0; i < o_t_length; i++)
+                        o_t_IOData[20+headerOffset+i] = (byte)O_T_IOData[i];
+                }
                 //---------------Write data
 
 
@@ -1187,5 +1179,33 @@ public class EEIPClient
     public void setRequestedPacketRate_T_O(long requestedPacketRate_T_O)
     {
         this.requestedPacketRate_T_O = requestedPacketRate_T_O;
+    }
+    
+    public void setO_T_IOData(byte[] data)
+    {
+        synchronized(O_T_IODataLock)
+        {
+            System.arraycopy(data, 0, O_T_IOData, 0, data.length);
+        }
+    }
+    
+    public byte[] getT_O_IOData(int size)
+    {
+        final byte[] result = new byte[T_O_IOData.length];
+        synchronized(T_O_IODataLock)
+        {
+            System.arraycopy(T_O_IOData, 0, result, 0, Math.min(size, T_O_IOData.length));
+        }
+        return result;
+    }
+    
+    public byte[] getO_T_IOData(int size)
+    {
+        final byte[] result = new byte[O_T_IOData.length];
+        synchronized(O_T_IODataLock)
+        {
+            System.arraycopy(O_T_IOData, 0, result, 0, Math.min(size, O_T_IOData.length));
+        }
+        return result;
     }
 }

@@ -4,9 +4,7 @@ import de.re.eeip.cip.datatypes.Priority;
 import de.re.eeip.cip.datatypes.RealTimeFormat;
 import de.re.eeip.cip.exception.CIPException;
 
-import java.io.Console;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * This example shows the Implicit Messaging of a Wago 750-352 in Java
@@ -46,18 +44,19 @@ public class Main
             eipClient.setT_O_priority(Priority.Urgent);
             eipClient.setT_O_variableLength(false);
             eipClient.setT_O_connectionType(ConnectionType.Multicast);
-            eipClient.O_T_IOData[0] = (byte)0xff;
+            eipClient.setO_T_IOData(new byte[] {(byte)0xff});
 
             System.out.println("Send Forward open to initiate IO Messaging");
             eipClient.ForwardOpen();
             for (int i = 0; i < 50; i++)
             {
-                System.out.println("Byte 0: "+eipClient.T_O_IOData[0]);
-                System.out.println("Byte 1: "+eipClient.T_O_IOData[1]);
-                System.out.println("Byte 2: "+eipClient.T_O_IOData[2]);
-                System.out.println("Byte 3: "+eipClient.T_O_IOData[3]);
-                System.out.println("Byte 4: "+eipClient.T_O_IOData[4]);
-                System.out.println("Byte 5: "+eipClient.T_O_IOData[5]);
+                byte[] T_O_IOData = eipClient.getT_O_IOData(6);
+                System.out.println("Byte 0: "+T_O_IOData[0]);
+                System.out.println("Byte 1: "+T_O_IOData[1]);
+                System.out.println("Byte 2: "+T_O_IOData[2]);
+                System.out.println("Byte 3: "+T_O_IOData[3]);
+                System.out.println("Byte 4: "+T_O_IOData[4]);
+                System.out.println("Byte 5: "+T_O_IOData[5]);
                 Thread.sleep(500);
             }
             System.out.println("Send Forward Close");
