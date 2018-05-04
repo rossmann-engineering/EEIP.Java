@@ -53,15 +53,18 @@ public class MainAllenBradley
             eipClient.ForwardOpen();
             for (int i = 0; i < 50; i++)
             {
-                eipClient.O_T_IOData[0] = (byte)(eipClient.O_T_IOData[0]+1);
-                eipClient.O_T_IOData[1] = (byte)(eipClient.O_T_IOData[1]+1);
-                eipClient.O_T_IOData[2] = (byte)(eipClient.O_T_IOData[2]+1);
-                eipClient.O_T_IOData[3] = (byte)(eipClient.O_T_IOData[3]+1);
+                byte[] O_T_IOData = eipClient.getO_T_IOData(4);
+                O_T_IOData[0] = (byte)(O_T_IOData[0]+1);
+                O_T_IOData[1] = (byte)(O_T_IOData[1]+1);
+                O_T_IOData[2] = (byte)(O_T_IOData[2]+1);
+                O_T_IOData[3] = (byte)(O_T_IOData[3]+1);
+                eipClient.setO_T_IOData(O_T_IOData);
 
-                System.out.println("Input Module 1: "+eipClient.T_O_IOData[8]);
-                System.out.println("Input Module 2: "+eipClient.T_O_IOData[9]);
-                System.out.println("Input Module 3: "+eipClient.T_O_IOData[10]);
-                System.out.println("Input Module 4: "+eipClient.T_O_IOData[11]);
+                byte[] T_O_IOData = eipClient.getT_O_IOData(12);
+                System.out.println("Input Module 1: "+T_O_IOData[8]);
+                System.out.println("Input Module 2: "+T_O_IOData[9]);
+                System.out.println("Input Module 3: "+T_O_IOData[10]);
+                System.out.println("Input Module 4: "+T_O_IOData[11]);
                 Thread.sleep(500);
             }
             System.out.println("Send Forward Close");
