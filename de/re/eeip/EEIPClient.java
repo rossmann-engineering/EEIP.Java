@@ -1,7 +1,6 @@
 package de.re.eeip;
 
-import com.sun.corba.se.pept.transport.Acceptor;
-import com.sun.corba.se.pept.transport.ListenerThread;
+
 import de.re.eeip.cip.datatypes.CIPCommonServicesEnum;
 import de.re.eeip.cip.datatypes.ConnectionType;
 import de.re.eeip.cip.datatypes.RealTimeFormat;
@@ -65,6 +64,8 @@ public class EEIPClient
     private int originatorUDPPort = 0x08AE;
     private int targetUDPPort = 0x08AE;
     private long multicastAddress;
+    private int ConfigurationAssemblyInstanceID = 0x04; // configurationAssemblyInstanceID is not always a common parameter for targets connection path
+    private int transportTrigger = 0x01 ; // The TriggerType gives possible states that be used for our cip connection for more details, have a look at cip documentation.
 
 
     private de.re.eeip.objectlibrary.AssemblyObject assemblyObject;
@@ -583,7 +584,7 @@ public class EEIPClient
         //----------------T->O Network Connection Parameters
 
         //----------------Transport Type/Trigger
-        commonPacketFormat.Data.add((byte)0x01);
+        commonPacketFormat.Data.add((byte)transportTrigger);
         //X------- = 0= Client; 1= Server
         //-XXX---- = Production Trigger, 0 = Cyclic, 1 = CoS, 2 = Application Object
         //----XXXX = Transport class, 0 = Class 0, 1 = Class 1, 2 = Class 2, 3 = Class 3
@@ -594,7 +595,7 @@ public class EEIPClient
         commonPacketFormat.Data.add((byte)(0x20));
         commonPacketFormat.Data.add((byte)(assemblyObjectClass));
         commonPacketFormat.Data.add((byte)(0x24));
-        commonPacketFormat.Data.add((byte)(0x01));
+        commonPacketFormat.Data.add((byte)(ConfigurationAssemblyInstanceID));
         if (o_t_connectionType != ConnectionType.Null)
         {
             commonPacketFormat.Data.add((byte)(0x2C));
@@ -1187,5 +1188,60 @@ public class EEIPClient
     public void setRequestedPacketRate_T_O(long requestedPacketRate_T_O)
     {
         this.requestedPacketRate_T_O = requestedPacketRate_T_O;
+    }
+
+    public void setConfigurationAssemblyInstanceID(int configurationAssemblyInstanceID) {
+        ConfigurationAssemblyInstanceID = configurationAssemblyInstanceID;
+    }
+    public void setTransportTrigger(int transportTrigger) {
+        this.transportTrigger = transportTrigger;
+    }
+
+    public void setAssemblyObjectClass(int assemblyObjectClass) {
+        this.assemblyObjectClass = (byte)assemblyObjectClass;
+    }
+    private short O_T_detectedLength;
+    /// <summary>
+    /// Detects the Length of the data Originator -> Target.
+    /// The Method uses an Explicit Message to detect the length.
+    /// The IP-Address, Port and the Instance ID has to be defined before
+    /// </summary>
+    public short Detect_O_T_Length ()
+    {
+        try{
+            if (O_T_detectedLength == 0)
+            {
+                if (this.sessionHandle == 0)
+                    this.RegisterSession();
+                O_T_detectedLength = (short)(this.GetAttributeSingle(0x04, o_t_instanceID, 3)).length;
+                return O_T_detectedLength;
+            }
+            else
+                return O_T_detectedLength;
+        }catch (Exception e){
+            e.printStackTrace();
+            return O_T_detectedLength;
+        }
+    }
+    private short T_O_detectedLength;
+    /// <summary>
+    /// Detects the Length of the data Target -> Originator.
+    /// The Method uses an Explicit Message to detect the length.
+    /// The IP-Address, Port and the Instance ID has to be defined before
+    /// </summary>
+    public short Detect_T_O_Length()
+    {
+        try {
+            if (T_O_detectedLength == 0) {
+                if (this.sessionHandle == 0)
+                    this.RegisterSession();
+                T_O_detectedLength = (short) (this.GetAttributeSingle(0x04, t_o_instanceID, 3)).length;
+                return T_O_detectedLength;
+            } else
+                return T_O_detectedLength;
+        }catch (Exception e){
+            e.printStackTrace();
+            return T_O_detectedLength;
+        }
     }
 }
